@@ -1,0 +1,143 @@
+{%extends 'base.html'%}
+{%block title%}{{public_user_data["nickname"]}}'s stats{%endblock%}
+{%block content%}
+<template id="game-template">
+    <div class="game">
+        <div class="column"><div class="row"><span class="game-status iconify"></span> vs <div class="player"><img class="game-opponent-avatar avatar-image-small"><a class="game-opponent"></a><span>(<span class="game-opponent-rank"></span>)</span></div></div>
+        <div><span class="iconify" data-icon="mdi-diameter-variant"></span><span class="game-score"></span></div>
+        </div>
+        <a href="#" target="_blank" class="button game-view">View</a>
+    </div>
+</template>
+<div class="stats-title"><img src="{{"https://static.geo.edutastic.de/avatars/"+public_user_data["avatarImage"] if public_user_data["avatarImage"] else "https://static.geo.edutastic.de/avatar/default.png"}}" class="avatar-image"><h1 class="title">{{public_user_data["nickname"]}}</h1></div>
+<div id="stats" class="tabs">
+    <div class="tablist">
+        <button data-tab="tab-pp" class="tab-button">Pinpointing</button>
+        <button data-tab="tab-flags" class="tab-button">Flags</button>
+    </div>
+    <div class="tab active" id="tab-pp" data-tab="tab-pp">
+        <div id="pp-grid" class="grid">
+            <div class="card col-4" id="pp-overview">
+                <div class="card-header">
+                    <h3 class="card-title">Overview</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat">
+                        <span class="stat-name">Total games played</span>
+                        <span class="stat-value" id="pp-overview-games-played"></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Win rate</span>
+                        <span class="stat-value" id="pp-overview-win-rate"></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Elo</span>
+                        <span class="stat-value" id="pp-overview-elo"></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Rank</span>
+                        <span class="stat-value" id="pp-overview-rank"></span>
+                    </div>
+
+
+                </div>
+            </div>
+            <div class="card col-8" id="pp-opponents">
+                <div class="card-header">
+                    <h3 class="card-title">Opponents</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat">
+                        <span class="stat-name">Best opponents (win rate)</span>
+                        <div class="stat-value-multi" id="pp-opponents-best"></div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Worst opponents (win rate)</span>
+                        <div class="stat-value-multi" id="pp-opponents-best"></div>
+                    </div>
+
+
+                </div>
+            </div>
+            <div class="card col-8" id="pp-games">
+                <div class="card-header">
+                    <h3 class="card-title">Games</h3>
+                </div>
+
+                <div class="card-body">
+                    <div class="stat">
+                        <span class="stat-name">Best games (score)</span>
+                        <div class="stat-value-multi" id="pp-games-best-games"></div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Worst games (score)</span>
+                        <div class="stat-value-multi" id="pp-games-worst-games"></div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Best wins (opponent elo)</span>
+                        <div class="stat-value-multi" id="pp-games-best-wins"></div>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Worst losses (opponent elo)</span>
+                        <div class="stat-value-multi" id="pp-games-worst-losses"></div>
+                    </div>
+                </div>
+            </div>
+
+             <div class="card col-4" id="pp-guesses">
+                <div class="card-header">
+                    <h3 class="card-title">Guesses</h3>
+                </div>
+                <div class="card-body">
+                    best guesses, worst guesses
+                </div>
+            </div>
+             
+
+            <div class="card col-6" id="pp-dist">
+                <div class="card-header">
+                    <h3 class="card-title">Score Distribution</h3>
+                </div>
+                <div class="card-body">
+                    <div id="pp-dist-histogram">
+                    </div>
+                </div>
+            </div>
+                       
+            <div class="card col-6" id="pp-countries">
+                <div class="card-header">
+                    <h3 class="card-title">Countries</h3>
+                </div>
+                <div class="card-body">
+                    list of countries by accuracy
+                </div>
+            </div>
+            <div class="card col-12" id="pp-areas">
+                <div class="card-header">
+                    <h3 class="card-title">Areas</h3>
+                </div>
+                <div class="card-body">
+                  guess density map (interactive?)
+                </div>
+            </div>
+            
+
+        </div>
+    </div>
+    <div class="tab" id="tab-flags" data-tab="tab-flags">
+        flags
+    </div>
+</div>
+<div id="loading">
+<img class="loading-image" src="/static/loading.webp" width="100">
+<div id="loading-data"><span id="loading-flavor">Loading...</span><progress id="loading-progress" max="100" value="0"></progress></div>
+</div>
+{%endblock%}
+{%block scripts%}
+<script>
+    const userUid = "{{uid}}";const userData = {{public_user_data|tojson}};
+</script>
+<script src="/static/js/proxy.js"></script>
+<script src="/static/js/tabs.js"></script>
+<script src="/static/js/stats.js"></script>
+{%endblock%}

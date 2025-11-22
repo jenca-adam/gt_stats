@@ -12,6 +12,7 @@ app = Flask(__name__, static_folder="static")
 
 
 client_lock = threading.Lock()
+refresh_lock = threading.Lock()
 last_update = 0
 client = None
 def get_client(force_refresh=False):
@@ -21,7 +22,9 @@ def get_client(force_refresh=False):
     """
     global client, last_update
     with client_lock:
+        print("NEXT", last_update)
         if client is None or (force_refresh and last_update<time.time()-1):
+            print("need update")
             try:
                 client = gt_api.Client.login(credentials['username'], credentials['password'])
                 last_update = time.time()
@@ -32,16 +35,18 @@ def get_client(force_refresh=False):
 
 client = get_client()
 
-def safe_api_call(func, *args, **kwargs):
+def safe_api_call(full_url, method, params, kwargs):
     global client
 
     try:
-        return func(*args, **kwargs)
-
+        return gt_api.generic.process_response(gt_api.generic.geotastic_api_request(full_url, method, client.auth_token, params=params, **kwargs))
     except gt_api.errors.GeotasticAPIError as e:
+        print(e)
         if "invalid token" in str(e).lower():
+            print("refreshing", getattr(client,'auth_token', None))
             client = get_client(force_refresh=True)
-            return func(*args, **kwargs)
+            print("new", client.auth_token)
+            return safe_api_call(full_url, method, params, kwargs)
         
         raise
 
@@ -74,15 +79,7 @@ def gt_proxy(url):
 
     try:
         response = safe_api_call(
-            lambda: gt_api.generic.process_response(
-                gt_api.generic.geotastic_api_request(
-                    full_url,
-                    request.method,
-                    client.auth_token,
-                    params=params,
-                    **kwargs
-                )
-            )
+                full_url, request.method, params, kwargs
         )
 
     except requests.exceptions.ConnectionError:
@@ -98,7 +95,7 @@ def stats(uid):
     client = get_client()
 
     try:
-        user_data = safe_api_call(lambda: client.get_public_user_info(uid))
+        user_data = safe_api_call("https://backend01.geotastic.net/v1/user/getPublicUserInfoByUid.php", "GET", {"uid":uid}, {})
     except gt_api.errors.GeotasticAPIError:
         abort(400)
     except Exception:

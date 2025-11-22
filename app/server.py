@@ -12,18 +12,16 @@ app = Flask(__name__, static_folder="static")
 
 
 client_lock = threading.Lock()
-client = None
 last_update = 0
-
+client = None
 def get_client(force_refresh=False):
     """
     Returns a logged-in client, refreshing the token only when required.
     Thread-safe.
     """
-    global client
-
+    global client, last_update
     with client_lock:
-        if client is None or (force_refresh and last_update<time.time()-10):
+        if client is None or (force_refresh and last_update<time.time()-1):
             try:
                 client = gt_api.Client.login(credentials['username'], credentials['password'])
                 last_update = time.time()
@@ -32,6 +30,7 @@ def get_client(force_refresh=False):
 
         return client
 
+client = get_client()
 
 def safe_api_call(func, *args, **kwargs):
     global client

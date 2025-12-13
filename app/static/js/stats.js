@@ -16,6 +16,8 @@ const playerTemplate = document.querySelector("#player-template");
 const guessTemplate = document.querySelector("#guess-template");
 const countryCorrectTemplate = document.querySelector("#country-correct-template");
 const countryScoreTemplate = document.querySelector("#country-score-template");
+
+const countryTimeTemplate = document.querySelector("#country-time-template");
 const map  = L.map('pp-areas-map').fitWorld();;
 const tileLayer = getTileLayer().addTo(map);
 var densityLayer;
@@ -106,7 +108,7 @@ class CountryStats{
         $(node).find(".country-correct-percent").text(`${(this.correctRate*100).toFixed(2)}`);
         const sortedMistakes = Object.keys(this.mistakes).sort((a,b)=>this.mistakes[b]-this.mistakes[a]);
         for (const m of sortedMistakes){
-            let flagSrc=`/static/flags/svg/${m||'??'}.svg`;
+            let flagSrc=`/static/flags/svg/${m||'none'}.svg`;
             //let countryName = COUNTRIES[m.toUpperCase()]||m;
             $(node).find(".country-correct-mistakes").append(`<div class="mistake row"><img class="small-flag" src="${flagSrc}">${m||'??'}(${this.mistakes[m]}x)</div>`)
         }
@@ -119,6 +121,14 @@ class CountryStats{
         $(node).find(".country-score-score").text(this.averageScore.toFixed(2));
         return node;
     }
+    get timeHtml(){
+        const node = countryTimeTemplate.content.cloneNode(true);
+        $(node).find(".country-time-name").text(COUNTRIES[this.iso2.toUpperCase()]||this.iso2);
+        $(node).find(".country-time-img").attr("src",`/static/flags/svg/${this.iso2}.svg`);
+        $(node).find(".country-time-time").text(this.averageTime.toFixed(2));
+        return node;
+    }
+
 };
 
 class Result {
@@ -135,7 +145,7 @@ class Result {
         $(node).find(".guess-score").text(this.score);
         $(node).find(".guess-time").text(`${this.time}s`);
         $(node).find(".guess-distance").text(`${this.distance.toFixed(2)} km`);
-        $(node).find(".guess-open").attr('href', `https://www.google.com/maps/@?api=1&map_action=pano&pano=${this.drop.panoId}`);
+        $(node).find(".guess-open").attr('href', this.drop.panoId?`https://www.google.com/maps/@?api=1&map_action=pano&pano=${this.drop.panoId}`:`https://www.google.com/maps/search/?api=1&query=${this.pick.lat},${this.pick.lng}`);
         return node;
     }
     addMap(node){
@@ -143,8 +153,12 @@ class Result {
         guessMap.invalidateSize();
         getTileLayer().addTo(guessMap);
         const guessMarker = L.marker([this.pick.lat, this.pick.lng]).addTo(guessMap);
-        const dropMarker = L.marker([this.drop.lat, this.drop.lng], {icon:targetIcon}).addTo(guessMap);
-        const guessLine = L.polyline([[this.pick.lat, this.pick.lng], [this.drop.lat, this.drop.lng]]).addTo(guessMap);
+        var dropMarker = guessMarker;
+        
+        if(this.drop.lat){
+        dropMarker = L.marker([this.drop.lat, this.drop.lng], {icon:targetIcon}).addTo(guessMap);
+        L.polyline([[this.pick.lat, this.pick.lng], [this.drop.lat, this.drop.lng]]).addTo(guessMap);
+        }
         guessMap.fitBounds(new L.featureGroup([guessMarker, dropMarker]).getBounds());
         maps.push(guessMap);
     }
@@ -158,6 +172,7 @@ class Player{
         this.nick = nick || "???";
         this._userData = null;
         this._ppGames = null;
+        this._flagsGames = null;
     }
     get userData() {
             return this._userData || (this._userData = USER_DATA_CACHE[this.uid]);
@@ -168,6 +183,12 @@ class Player{
         }
     get ppGames(){
         return this._ppGames|| (this._ppGames=stats.ppGames.filter(g=>g.opponents[0].player==this));
+    }
+    get flagsGames(){
+        return this._flagsGames || (this._flagsGames=stats.flagsGames.filter(g=>g.opponents[0].player==this));
+    }
+    get flagsWinRate(){
+        return this.flagsGames.filter(g=>g.players[userUid].won).length/this.flagsGames.length;
     }
     get ppWinRate(){
         return this.ppGames.filter(g=>g.players[userUid].won).length/this.ppGames.length;
@@ -182,6 +203,17 @@ class Player{
         $(node).find(".player-winrate").text(`${(this.ppWinRate*100).toFixed(2)}%`);
         $(node).find(".player-games-played").text(this.ppGames.length);
         return node;
+    }
+    get flagsHtml(){
+        const node = playerTemplate.content.cloneNode(true);
+        $(node).find(".player-nick").text(this.nick);
+         $(node).find(".player-nick").attr("href", `https://geotastic.net/user-page/${this.uid}`);
+        $(node).find(".player-avatar").attr("src", getAvatarUrl(this.userData?.avatarImage));
+        $(node).find(".player-rank").html(Rank.fromElo(this.elo(15)).html);
+        $(node).find(".player-winrate").text(`${(this.flagsWinRate*100).toFixed(2)}%`);
+        $(node).find(".player-games-played").text(this.flagsGames.length);
+        return node;
+
     }
 
     games(mmid){
@@ -323,7 +355,7 @@ class Stats {
     }
     bestGuesses(mmid){
         function score(g){
-            return g.score*100000000000000-g.distance*(10000*(mmid!=15))-g.time;
+            return g.score*1000000-g.distance*(10000*(mmid!=15))-g.time;
         }
         const games = (mmid==15?this.flagsGames:this.ppGames);
         return games.map(g=>Object.values(g.players[userUid].results)).flat().filter(r=>!!r.pick.iso2).sort((a,b)=>(score(b)-score(a)));
@@ -431,13 +463,70 @@ class Stats {
 
     }
     async showFlags() {
-        $("#tab-flags").text("coming soon! (maybe)");
+        $("#flags-overview-games-played").text(this.flagsGames.length);
+        $("#flags-overview-win-rate").text((this.flagsGames.length ? (100 * this.flagsWon / this.flagsGames.length).toFixed(2) : 0) + "%");
+        $("#flags-overview-elo").text(this.flagsElo);
+        $("#flags-overview-rank").html(this.flagsRank.html);
+        const b = this.bestGames(15);
+        for(const g of b.slice(0,3)){
+            $("#flags-games-best-games").append(g.html);
+        }
+        for(const g of b.slice(b.length-3).reverse()){
+            $("#flags-games-worst-games").append(g.html);
+        }
+        for (const g of this.bestWins(15).slice(0,3)){
+            $("#flags-games-best-wins").append(g.html);
+        }
+        for (const g of this.worstLosses(15).slice(0,3)){
+            $("#flags-games-worst-losses").append(g.html);
+        }
+        for(const p of this.bestOpponents(15).slice(0,3)){
+            $("#flags-opponents-best").append(p.html(15));
+        }
+        for(const p of this.worstOpponents(15).slice(0,3)){
+            $("#flags-opponents-worst").append(p.html(15));
+        }
+        for(const p of this.mostPlayedOpponents(15).slice(0,3)){
+            $("#flags-opponents-most-played").append(p.html(15));
+        }
+        const bestFlagsGuesses = this.bestGuesses(15);
+        for (const g of bestFlagsGuesses.slice(0,3)){
+            let node = g.html;
+            $("#flags-guesses-best").append(node);
+            g.addMap($("#flags-guesses-best .guess").last());
+            //setTimeout(()=>{g.addMap(node)}, 10);
+        }
+        for (const g of bestFlagsGuesses.slice(bestFlagsGuesses.length-3).reverse()){
+            let node = g.html;
+            $("#flags-guesses-worst").append(node);
+
+            g.addMap($("#flags-guesses-worst .guess").last());
+            //setTimeout(()=>{g.addMap(node)}, 10);
+        }
+        for (const c of this.worstCountriesScore(15)){
+            $("#flags-countries-score").append(c.scoreHtml);
+        }
+        for (const c of this.worstCountriesTime(15)){
+            $("#flags-countries-time").append(c.timeHtml);
+        }
+
+         const hg = $("#flags-dist-histogram")[0];
+        Plotly.newPlot('flags-dist-histogram', [{x:[...Array(24).keys().map(k=>k*250)], y:this.flagsHistogram, type:"bar"}], {responsive: true});
+        const ro = new ResizeObserver(() => {
+          Plotly.Plots.resize(hg);
+        });
+
+        ro.observe(hg);
     }
     async show() {
         await Promise.all([this.showPp(), this.showFlags()]);
     }
     get ppHistogram(){
         const hgram = this.ppGames.map(g=>g.players[userUid].hgram).reduce(sumHgrams, {});
+        return [...Array(24).keys().map(bucket=>hgram[bucket]||0)];
+    }
+    get flagsHistogram(){
+        const hgram = this.flagsGames.map(g=>g.players[userUid].hgram).reduce(sumHgrams, {});
         return [...Array(24).keys().map(bucket=>hgram[bucket]||0)];
     }
     get guessLocations(){
@@ -475,9 +564,11 @@ function *deduplicateLobbies(games){
         }
     }
 }
-$("#stats").tabs();
 $("#pp-countries > .tabs").tabs();
+
+$("#flags-countries > .tabs").tabs();
 $("#loading-data").hide();
+
 getAllMatchmakingGames(userUid).then(async (g) => {
     $("#loading-data").show();
     $("#loading img").hide();
@@ -485,5 +576,6 @@ getAllMatchmakingGames(userUid).then(async (g) => {
     $("#loading-progress").attr("max", g.length);
     const stats = await processGames([...deduplicateLobbies(g)]);
     await stats.show();
+    $("#stats").tabs();
     $("#loading").hide();
 });

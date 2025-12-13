@@ -20,7 +20,9 @@
     <div class="player-outer">
         <div class="row right">
             <div class="column">
-                <div class="player"><img class="player-avatar avatar-image-small"><a class="player-nick"></a></div><div><span class="player-rank"></span></div></div>
+                <div class="player"><img class="player-avatar avatar-image-small"><a class="player-nick"></a></div>
+                <div><span class="player-rank"></span></div>
+            </div>
             <div class="column right"><span class="player-winrate"></span>
                 <div class="row"><span class="player-games-played"></span> games</div>
             </div>
@@ -32,10 +34,10 @@
         <div class="column">
             <div class="row"><strong class="guess-score"></strong> <span class="guess-time"></span>
                 <span class="guess-distance"></span>
-                <a class="guess-open" target="_blank"><span class="iconify" data-icon="mdi-open-in-new"></span></a> 
+                <a class="guess-open" target="_blank"><span class="iconify" data-icon="mdi-open-in-new"></span></a>
             </div>
             <div class="guess-map"></div>
-        </div>    
+        </div>
     </div>
 </template>
 <template id="country-correct-template">
@@ -47,7 +49,8 @@
                 </span>
             </div>
         </td>
-        <td class="country-correct-percent"></td><td>
+        <td class="country-correct-percent"></td>
+        <td>
             <div class="row country-correct-mistakes wrap">
             </div>
         </td>
@@ -64,6 +67,19 @@
         <td><strong class="country-score-score"></strong></td>
     </tr>
 </template>
+<template id="country-time-template">
+    <tr class="country-time table-row">
+        <td>
+            <div class="row">
+                <img class="country-time-img small-flag">
+                <span class="country-time-name">
+                </span>
+            </div>
+        </td>
+        <td><span class="country-time-time"></span>s</td>
+    </tr>
+</template>
+
 <div class="stats-title"><img src="{{"https://static.geo.edutastic.de/avatars/"+public_user_data["avatarImage"] if public_user_data["avatarImage"] else "https://static.geo.edutastic.de/avatar/default.png"}}" class="avatar-image">
     <h1 class="title">{{public_user_data["nickname"]}}</h1>
 </div>
@@ -223,8 +239,145 @@
         </div>
     </div>
     <div class="tab" id="tab-flags" data-tab="tab-flags">
-        flags
-    </div>
+        <div id="flags-grid" class="grid">
+            <div class="card col-5" id="flags-overview">
+                <div class="card-header">
+                    <h3 class="card-title">Overview</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat">
+                        <span class="stat-name">Total games played</span>
+                        <span class="stat-value" id="flags-overview-games-played"></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Win rate</span>
+                        <span class="stat-value" id="flags-overview-win-rate"></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Elo</span>
+                        <span class="stat-value" id="flags-overview-elo"></span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-name">Rank</span>
+                        <span class="stat-value" id="flags-overview-rank"></span>
+                    </div>
+
+
+                </div>
+            </div>
+            <div class="card col-7" id="flags-opponents">
+                <div class="card-header">
+                    <h3 class="card-title">Opponents</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat column">
+                        <span class="stat-name">Best opponents (win rate)</span>
+                        <div class="stat-value-multi row wrap" id="flags-opponents-best"></div>
+                    </div>
+                    <div class="stat column">
+                        <span class="stat-name">Worst opponents (win rate)</span>
+                        <div class="stat-value-multi row wrap" id="flags-opponents-worst"></div>
+                    </div>
+                    <div class="stat column">
+                        <span class="stat-name">Most played opponents</span>
+                        <div class="stat-value-multi row wrap" id="flags-opponents-most-played"></div>
+                    </div>
+                </div>
+            </div>
+
+        <div class="card col-5" id="flags-games">
+            <div class="card-header">
+                <h3 class="card-title">Games</h3>
+            </div>
+
+            <div class="card-body">
+                <div class="stat column">
+                    <span class="stat-name">Best games (score)</span>
+                    <div class="stat-value-multi column" id="flags-games-best-games"></div>
+                </div>
+                <div class="stat column">
+                    <span class="stat-name">Worst games (score)</span>
+                    <div class="stat-value-multi column" id="flags-games-worst-games"></div>
+                </div>
+                <div class="stat column">
+                    <span class="stat-name">Best wins (opponent elo)</span>
+                    <div class="stat-value-multi column" id="flags-games-best-wins"></div>
+                </div>
+                <div class="stat column">
+                    <span class="stat-name">Worst losses (opponent elo)</span>
+                    <div class="stat-value-multi column" id="flags-games-worst-losses"></div>
+                </div>
+            </div>
+        </div>
+        <div class="card col-7" id="flags-guesses">
+                <div class="card-header">
+                    <h3 class="card-title">Guesses</h3>
+                </div>
+                <div class="card-body">
+                    <div class="stat column">
+                        <span class="stat-name">Best guesses</span>
+                        <div class="stat-value-multi row wrap" id="flags-guesses-best"></div>
+                    </div>
+                    <div class="stat column">
+                        <span class="stat-name">Worst guesses</span>
+                        <div class="stat-value-multi row wrap" id="flags-guesses-worst"></div>
+                    </div>
+
+                </div>
+            </div>
+
+
+        <div class="card col-6" id="flags-dist">
+                <div class="card-header">
+                    <h3 class="card-title">Score Distribution</h3>
+                </div>
+                <div class="card-body">
+                    <div id="flags-dist-histogram">
+                    </div>
+                </div>
+            </div>
+    <div class="card col-6" id="flags-countries">
+                <div class="card-header">
+                    <h3 class="card-title">Countries</h3>
+                </div>
+
+                <div class="tabs">
+                    <div class="tablist">
+                        <button class="tab-button active" data-tab="tab-score">Score</button>
+                    
+                        <button class="tab-button" data-tab="tab-time">Time</button>
+                    </div>
+                    <div class="tab active country-table-wrapper" data-tab="tab-score">
+                        <table class="country-table" cellspacing="0" cellpadding="2">
+                            <thead>
+                                <tr>
+                                    <th>Country</th>
+                                    <th>Average Score</th>
+                                </tr>
+                            </thead>
+                            <tbody id="flags-countries-score">
+                            </tbody>
+                        </table>
+
+                    </div>
+
+                    <div class="tab country-table-wrapper" data-tab="tab-time">
+                        <table class="country-table" cellspacing="0" cellpadding="2">
+                            <thead>
+                                <tr>
+                                    <th>Country</th>
+                                    <th>Average Time</th>
+                                </tr>
+                            </thead>
+                            <tbody id="flags-countries-time">
+                            </tbody>
+                        </table>
+
+                    </div>
+                </div>
+            </div>
+</div>
+</div>
 </div>
 <div id="loading">
     <img class="loading-image" src="/static/loading.webp" width="100">

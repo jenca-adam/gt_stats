@@ -384,6 +384,22 @@
     <div id="loading-data"><span id="loading-flavor">Loading...</span><progress id="loading-progress" max="100" value="0"></progress></div>
 </div>
 {%endblock%}
+{%block extra%}
+<div id="modal-container" style="display:none; position:absolute;">
+    <div id="modal-wrapper" style="background:rgba(0,0,0,0.5); position:absolute; z-index:99; width:100vw; height:100vh; display:flex; justify-content:center; align-items:center">
+    <div id="modal" class="card" style="width:50vw;">
+        <div class="card-header">
+            <h3 class="card-title" id="modal-title"></h3>
+        </div>
+        <div id="modal-body" style="padding:1em;">
+        </div>
+        <div id="modal-foot" style="display:flex; flex-direction:row; justify-content:center; align-items:center; padding:1em;">
+            <button id="modal-close" class="button">Close</button>
+        </div>
+    </div>
+</div>
+</div>
+{%endblock%}
 {%block scripts%}
 <script>
     const userUid = "{{uid}}";
@@ -393,4 +409,5 @@
 <script src="/static/js/proxy.js"></script>
 <script src="/static/js/tabs.js"></script>
 <script src="/static/js/stats.js"></script>
+<script src="/static/js/poor.js"></script>
 {%endblock%}

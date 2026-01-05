@@ -291,7 +291,8 @@ body {
   text-transform:uppercase;
   color:#fff;
   text-decoration:none;
-  border-radius:2px
+  border-radius:2px;
+  border:none;
   }
 .game-opponent, .player-nick, .guess-open{
   color:inherit;

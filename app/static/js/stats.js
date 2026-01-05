@@ -199,7 +199,7 @@ class Player{
          $(node).find(".player-nick").text(this.nick);
          $(node).find(".player-nick").attr("href", `https://geotastic.net/user-page/${this.uid}`);
         $(node).find(".player-avatar").attr("src", getAvatarUrl(this.userData?.avatarImage));
-        $(node).find(".player-rank").html(Rank.fromElo(this.elo(16)).html);
+        $(node).find(".player-rank").html(Rank.fromElo(this.elo(13)).html);
         $(node).find(".player-winrate").text(`${(this.ppWinRate*100).toFixed(2)}%`);
         $(node).find(".player-games-played").text(this.ppGames.length);
         return node;
@@ -217,13 +217,13 @@ class Player{
     }
 
     games(mmid){
-        return mmid==16?this.ppGames:this.flagsGames;
+        return mmid==15?this.flagsGames:this.ppGames;
     }
     winRate(mmid){
-        return mmid==16?this.ppWinRate:this.flagsWinRate;
+        return mmid==15?this.flagsWinRate:this.ppWinRate;
     }
     html(mmid){
-        return mmid==16?this.ppHtml:this.flagsHtml;
+        return mmid==15?this.flagsHtml:this.ppHtml;
     }
 }
 class Game {
@@ -308,7 +308,7 @@ class Stats {
         this.flagsGames = [];
         this.ppWon = 0;
         this.flagsWon = 0;
-        this.ppElo = userData.seasonProgress.elo.filter(a => a.matchmakingId === 16)[0].elo;
+        this.ppElo = userData.seasonProgress.elo.filter(a => a.matchmakingId === 13)[0].elo;
         this.ppRank = Rank.fromElo(this.ppElo);
         this.flagsElo = userData.seasonProgress.elo.filter(a => a.matchmakingId === 15)[0].elo;
         this.flagsRank = Rank.fromElo(this.flagsElo);
@@ -366,7 +366,7 @@ class Stats {
     async processGame(game) {
         let gameObj = await Game.fromLobbyId(game.lobbyId);
         var countryStats;
-        if (game.matchmakingId == 16) {
+        if (game.matchmakingId == 16 || game.matchmakingId == 13) {
 
             this.ppGames.push(gameObj);
             if (game.placement == 1) {

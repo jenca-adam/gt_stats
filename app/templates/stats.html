@@ -403,11 +403,7 @@
 {%block scripts%}
 <script>
     const userUid = "{{uid}}";
-    const userData = {
-        {
-            public_user_data | tojson
-        }
-    };
+    const userData = {{public_user_data | tojson}};
 </script>
 <script src="/static/js/countries.js"></script>
 <script src="/static/js/proxy.js"></script>

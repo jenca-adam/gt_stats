@@ -1,15 +1,15 @@
-function getTileLayer(){
+function getTileLayer() {
     return L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom:19,
-});
+        maxZoom: 19,
+    });
 }
 const TIER_TEXTS = ["Bronze Bird", "Silver Swan", "Gold Goose", "Platin Penguin", "Diamond Duck", "Master Mallard"];
 const USER_DATA_CACHE = {};
 const PLAYER_CACHE = {};
 const HEATMAP_OPTS = {
-    blur:0,
-    minOpacity:0.5,
-    radius:10
+    blur: 0,
+    minOpacity: 0.5,
+    radius: 10
 };
 const gameTemplate = document.querySelector("#game-template");
 const playerTemplate = document.querySelector("#player-template");
@@ -18,19 +18,22 @@ const countryCorrectTemplate = document.querySelector("#country-correct-template
 const countryScoreTemplate = document.querySelector("#country-score-template");
 
 const countryTimeTemplate = document.querySelector("#country-time-template");
-const map  = L.map('pp-areas-map').fitWorld();;
+const map = L.map('pp-areas-map').fitWorld();;
 const tileLayer = getTileLayer().addTo(map);
 var densityLayer;
 var stats;
-var maps=[];
+var maps = [];
 const gtIcon = L.Icon.extend({
     options: {
-        iconSize:     [28, 40],
-        iconAnchor:   [14, 40],
+        iconSize: [28, 40],
+        iconAnchor: [14, 40],
     }
 });
-const targetIcon = new gtIcon({iconUrl:"https://static.geo.edutastic.de/app_assets/target-marker.png"});
+const targetIcon = new gtIcon({
+    iconUrl: "https://static.geo.edutastic.de/app_assets/target-marker.png"
+});
 USER_DATA_CACHE[userUid] = userData;
+
 function distance(lat1, lon1, lat2, lon2) {
     const r = 6371; // global avg
     const p = Math.PI / 180;
@@ -41,13 +44,15 @@ function distance(lat1, lon1, lat2, lon2) {
 
     return 2 * r * Math.asin(Math.sqrt(a));
 }
-function getAvatarUrl(avatar){
-    return avatar?"https://static.geo.edutastic.de/avatars/"+avatar:"https://static.geo.edutastic.de/avatar/default.png";
+
+function getAvatarUrl(avatar) {
+    return avatar ? "https://static.geo.edutastic.de/avatars/" + avatar : "https://static.geo.edutastic.de/avatar/default.png";
 }
-function sumHgrams(h1, h2){
+
+function sumHgrams(h1, h2) {
     var h = Object.assign({}, h1);
-    for(var k of Object.keys(h2)){
-        h[k]=(h[k]||0)+h2[k];
+    for (var k of Object.keys(h2)) {
+        h[k] = (h[k] || 0) + h2[k];
     }
     return h;
 }
@@ -68,63 +73,62 @@ class Rank {
         return `<span class="rank ${this.tierClass}"><span class="rank-name">${this.tierText}</span><span class="rank-stars">${this.starsText}</span></span>`
     }
 };
-class CountryStats{
-    constructor(iso2){
-        this.iso2=iso2;
-        this.guessedRight=0;
-        this.guessedTotal=0;
-        this.totalScore=0;
-        this.totalTime=0;
-        this.mistakes={};
+class CountryStats {
+    constructor(iso2) {
+        this.iso2 = iso2;
+        this.guessedRight = 0;
+        this.guessedTotal = 0;
+        this.totalScore = 0;
+        this.totalTime = 0;
+        this.mistakes = {};
     }
-    process(result){
-        if(result.pick.lat==0&&result.pick.lng==0){
+    process(result) {
+        if (result.pick.lat == 0 && result.pick.lng == 0) {
             return;
         }
         this.guessedTotal++;
-        if(result.gotCountry){
+        if (result.gotCountry) {
             this.guessedRight++;
+        } else {
+            this.mistakes[result.pick.iso2] = (this.mistakes[result.pick.iso2] || 0) + 1;
         }
-        else{
-            this.mistakes[result.pick.iso2]=(this.mistakes[result.pick.iso2]||0)+1;
-        }
-        this.totalScore+=result.score;
-        this.totalTime+=result.time;
+        this.totalScore += result.score;
+        this.totalTime += result.time;
     }
 
-    get averageScore(){
-        return this.totalScore/this.guessedTotal;
+    get averageScore() {
+        return this.totalScore / this.guessedTotal;
     }
-    get correctRate(){
-        return this.guessedRight/this.guessedTotal;
+    get correctRate() {
+        return this.guessedRight / this.guessedTotal;
     }
-    get averageTime(){
-        return this.totalTime/this.guessedTotal;
+    get averageTime() {
+        return this.totalTime / this.guessedTotal;
     }
-    get correctHtml(){
+    get correctHtml() {
         const node = countryCorrectTemplate.content.cloneNode(true);
-        $(node).find(".country-correct-name").text(COUNTRIES[this.iso2.toUpperCase()]||this.iso2);
-        $(node).find(".country-correct-img").attr("src",`/static/flags/svg/${this.iso2}.svg`);
+        $(node).find(".country-correct-name").text(COUNTRIES[this.iso2.toUpperCase()] || this.iso2);
+        $(node).find(".country-correct-img").attr("src", `/static/flags/svg/${this.iso2}.svg`);
         $(node).find(".country-correct-percent").text(`${(this.correctRate*100).toFixed(2)}`);
-        const sortedMistakes = Object.keys(this.mistakes).sort((a,b)=>this.mistakes[b]-this.mistakes[a]);
-        for (const m of sortedMistakes){
-            let flagSrc=`/static/flags/svg/${m||'none'}.svg`;
+        const sortedMistakes = Object.keys(this.mistakes).sort((a, b) => this.mistakes[b] - this.mistakes[a]);
+        for (const m of sortedMistakes) {
+            let flagSrc = `/static/flags/svg/${m||'none'}.svg`;
             //let countryName = COUNTRIES[m.toUpperCase()]||m;
             $(node).find(".country-correct-mistakes").append(`<div class="mistake row"><img class="small-flag" src="${flagSrc}">${m||'??'}(${this.mistakes[m]}x)</div>`)
         }
         return node;
     }
-    get scoreHtml(){
+    get scoreHtml() {
         const node = countryScoreTemplate.content.cloneNode(true);
-        $(node).find(".country-score-name").text(COUNTRIES[this.iso2.toUpperCase()]||this.iso2);
-        $(node).find(".country-score-img").attr("src",`/static/flags/svg/${this.iso2}.svg`);
+        $(node).find(".country-score-name").text(COUNTRIES[this.iso2.toUpperCase()] || this.iso2);
+        $(node).find(".country-score-img").attr("src", `/static/flags/svg/${this.iso2}.svg`);
         $(node).find(".country-score-score").text(this.averageScore.toFixed(2));
         return node;
     }
-    get timeHtml(){
+    get timeHtml() {
         const node = countryTimeTemplate.content.cloneNode(true);
-        $(node).find(".country-time-name").text(COUNTRIES[this.iso2.toUpperCase()]||this.iso2);
-        $(node).find(".country-time-img").attr("src",`/static/flags/svg/${this.iso2}.svg`);
+        $(node).find(".country-time-name").text(COUNTRIES[this.iso2.toUpperCase()] || this.iso2);
+        $(node).find(".country-time-img").attr("src", `/static/flags/svg/${this.iso2}.svg`);
         $(node).find(".country-time-time").text(this.averageTime.toFixed(2));
         return node;
     }
@@ -140,24 +144,29 @@ class Result {
         this.distance = distance(this.drop.lat, this.drop.lng, this.pick.lat, this.pick.lng);
         this.time = resultJson.time;
     }
-    get html(){
+    get html() {
         const node = guessTemplate.content.cloneNode(true);
         $(node).find(".guess-score").text(this.score);
         $(node).find(".guess-time").text(`${this.time}s`);
         $(node).find(".guess-distance").text(`${this.distance.toFixed(2)} km`);
-        $(node).find(".guess-open").attr('href', this.drop.panoId?`https://www.google.com/maps/@?api=1&map_action=pano&pano=${this.drop.panoId}`:`https://www.google.com/maps/search/?api=1&query=${this.pick.lat},${this.pick.lng}`);
+        $(node).find(".guess-open").attr('href', this.drop.panoId ? `https://www.google.com/maps/@?api=1&map_action=pano&pano=${this.drop.panoId}` : `https://www.google.com/maps/search/?api=1&query=${this.pick.lat},${this.pick.lng}`);
         return node;
     }
-    addMap(node){
+    addMap(node) {
         const guessMap = L.map($(node).find(".guess-map")[0]);
         guessMap.invalidateSize();
         getTileLayer().addTo(guessMap);
         const guessMarker = L.marker([this.pick.lat, this.pick.lng]).addTo(guessMap);
         var dropMarker = guessMarker;
-        
-        if(this.drop.lat){
-        dropMarker = L.marker([this.drop.lat, this.drop.lng], {icon:targetIcon}).addTo(guessMap);
-        L.polyline([[this.pick.lat, this.pick.lng], [this.drop.lat, this.drop.lng]]).addTo(guessMap);
+
+        if (this.drop.lat) {
+            dropMarker = L.marker([this.drop.lat, this.drop.lng], {
+                icon: targetIcon
+            }).addTo(guessMap);
+            L.polyline([
+                [this.pick.lat, this.pick.lng],
+                [this.drop.lat, this.drop.lng]
+            ]).addTo(guessMap);
         }
         guessMap.fitBounds(new L.featureGroup([guessMarker, dropMarker]).getBounds());
         maps.push(guessMap);
@@ -165,8 +174,8 @@ class Result {
 
 };
 
-class Player{
-    constructor(uid, id, nick){
+class Player {
+    constructor(uid, id, nick) {
         this.uid = uid;
         this.id = id;
         this.nick = nick || "???";
@@ -175,39 +184,39 @@ class Player{
         this._flagsGames = null;
     }
     get userData() {
-            return this._userData || (this._userData = USER_DATA_CACHE[this.uid]);
-        }
-    elo(mmid){
+        return this._userData || (this._userData = USER_DATA_CACHE[this.uid]);
+    }
+    elo(mmid) {
 
-            return !!this.userData?this.userData.seasonProgress.elo.filter(a => a.matchmakingId === mmid)[0].elo:0;
-        }
-    get ppGames(){
-        return this._ppGames|| (this._ppGames=stats.ppGames.filter(g=>g.opponents[0].player==this));
+        return !!this.userData ? this.userData.seasonProgress.elo.filter(a => a.matchmakingId === mmid)[0].elo : 0;
     }
-    get flagsGames(){
-        return this._flagsGames || (this._flagsGames=stats.flagsGames.filter(g=>g.opponents[0].player==this));
+    get ppGames() {
+        return this._ppGames || (this._ppGames = stats.ppGames.filter(g => g.opponents[0].player == this));
     }
-    get flagsWinRate(){
-        return this.flagsGames.filter(g=>g.players[userUid].won).length/this.flagsGames.length;
+    get flagsGames() {
+        return this._flagsGames || (this._flagsGames = stats.flagsGames.filter(g => g.opponents[0].player == this));
     }
-    get ppWinRate(){
-        return this.ppGames.filter(g=>g.players[userUid].won).length/this.ppGames.length;
+    get flagsWinRate() {
+        return this.flagsGames.filter(g => g.players[userUid].won).length / this.flagsGames.length;
+    }
+    get ppWinRate() {
+        return this.ppGames.filter(g => g.players[userUid].won).length / this.ppGames.length;
     }
 
     get ppHtml() {
-         const node = playerTemplate.content.cloneNode(true);
-         $(node).find(".player-nick").text(this.nick);
-         $(node).find(".player-nick").attr("href", `https://geotastic.net/user-page/${this.uid}`);
+        const node = playerTemplate.content.cloneNode(true);
+        $(node).find(".player-nick").text(this.nick);
+        $(node).find(".player-nick").attr("href", `https://geotastic.net/user-page/${this.uid}`);
         $(node).find(".player-avatar").attr("src", getAvatarUrl(this.userData?.avatarImage));
         $(node).find(".player-rank").html(Rank.fromElo(this.elo(13)).html);
         $(node).find(".player-winrate").text(`${(this.ppWinRate*100).toFixed(2)}%`);
         $(node).find(".player-games-played").text(this.ppGames.length);
         return node;
     }
-    get flagsHtml(){
+    get flagsHtml() {
         const node = playerTemplate.content.cloneNode(true);
         $(node).find(".player-nick").text(this.nick);
-         $(node).find(".player-nick").attr("href", `https://geotastic.net/user-page/${this.uid}`);
+        $(node).find(".player-nick").attr("href", `https://geotastic.net/user-page/${this.uid}`);
         $(node).find(".player-avatar").attr("src", getAvatarUrl(this.userData?.avatarImage));
         $(node).find(".player-rank").html(Rank.fromElo(this.elo(15)).html);
         $(node).find(".player-winrate").text(`${(this.flagsWinRate*100).toFixed(2)}%`);
@@ -216,20 +225,20 @@ class Player{
 
     }
 
-    games(mmid){
-        return mmid==15?this.flagsGames:this.ppGames;
+    games(mmid) {
+        return mmid == 15 ? this.flagsGames : this.ppGames;
     }
-    winRate(mmid){
-        return mmid==15?this.flagsWinRate:this.ppWinRate;
+    winRate(mmid) {
+        return mmid == 15 ? this.flagsWinRate : this.ppWinRate;
     }
-    html(mmid){
-        return mmid==15?this.flagsHtml:this.ppHtml;
+    html(mmid) {
+        return mmid == 15 ? this.flagsHtml : this.ppHtml;
     }
 }
 class Game {
     static PlayerResult = class PlayerResult {
         // the playerresult class is local to each game to avoid confusion with the Player class
-         constructor(player, won) {
+        constructor(player, won) {
             this.results = {};
             this.totalScore = 0;
             this.roundsGuessed = 0;
@@ -238,32 +247,32 @@ class Game {
             this.hgram = {};
             this.guessLocations = [];
             this.player = player;
-            
+
         }
         processResult(result) {
             this.results[result.round] = new Result(result);
-            if (result.pick.lat==0&&result.pick.lng==0) {
+            if (result.pick.lat == 0 && result.pick.lng == 0) {
                 //don't count forgetting to guess as an actual guess
                 return;
             }
-            
+
             this.totalScore += result.score;
             this.totalTime += result.time;
-            const bucket = Math.min(23, Math.floor(result.score/250)); // we don't want 6000-ers to be in a separate bucket
-            this.hgram[bucket] = (this.hgram[bucket]||0)+1;
+            const bucket = Math.min(23, Math.floor(result.score / 250)); // we don't want 6000-ers to be in a separate bucket
+            this.hgram[bucket] = (this.hgram[bucket] || 0) + 1;
             this.guessLocations.push([result.pick.lat, result.pick.lng]);
             this.roundsGuessed++;
         }
         get userData() {
             return this.player.userData;
         }
-        get averageScore(){
-            return this.totalScore/this.roundsGuessed;
+        get averageScore() {
+            return this.totalScore / this.roundsGuessed;
         }
-        get averageTime(){
-            return this.totalTime/this.roundsGuessed;
+        get averageTime() {
+            return this.totalTime / this.roundsGuessed;
         }
-        elo(mmid){
+        elo(mmid) {
             return this.player.elo(mmid);
         }
     };
@@ -275,20 +284,20 @@ class Game {
         for (const result of apiResponse.results) {
             if (!(result.userUid in this.players)) {
                 const p = PLAYER_CACHE[result.userUid] = (PLAYER_CACHE[result.userUid] || new Player(result.userUid, result.userId, result.nickname));
-                this.players[result.userUid] = new Game.PlayerResult(p, result.userId==apiResponse.winnerUserId);
+                this.players[result.userUid] = new Game.PlayerResult(p, result.userId == apiResponse.winnerUserId);
             }
             this.players[result.userUid].processResult(result);
         }
     }
-    get opponents(){
-        return Object.keys(this.players).filter(u=>u!=userUid).map(a=>this.players[a]);
+    get opponents() {
+        return Object.keys(this.players).filter(u => u != userUid).map(a => this.players[a]);
     }
-    get html(){
-        const node = gameTemplate.content.cloneNode(true); 
-        $(node).find(".game").addClass(this.players[userUid].won?"won":"lost");
-        $(node).find(".game-status").attr("data-icon", this.players[userUid].won?"mdi-check":"mdi-close");
+    get html() {
+        const node = gameTemplate.content.cloneNode(true);
+        $(node).find(".game").addClass(this.players[userUid].won ? "won" : "lost");
+        $(node).find(".game-status").attr("data-icon", this.players[userUid].won ? "mdi-check" : "mdi-close");
         $(node).find(".game-opponent").text(this.opponents[0].player.nick);
-        $(node).find(".game-opponent").attr("href",`https://geotastic.net/user-page/${this.opponents[0].player.uid}`);
+        $(node).find(".game-opponent").attr("href", `https://geotastic.net/user-page/${this.opponents[0].player.uid}`);
         $(node).find(".game-opponent-rank").html(Rank.fromElo(this.opponents[0].elo(this.matchmakingId)).html);
         $(node).find(".game-score").text(this.players[userUid].averageScore.toFixed(2));
         $(node).find(".game-view").attr("href", `https://geotastic.net/game-history-details/${this.lobbyId}`);
@@ -313,55 +322,55 @@ class Stats {
         this.flagsElo = userData.seasonProgress.elo.filter(a => a.matchmakingId === 15)[0].elo;
         this.flagsRank = Rank.fromElo(this.flagsElo);
     }
-    bestGames(mmid){
-        function score(g){
-            return g.players[userUid].averageScore*10000+g.players[userUid].averageTime;
+    bestGames(mmid) {
+        function score(g) {
+            return g.players[userUid].averageScore * 10000 + g.players[userUid].averageTime;
         }
-        return (mmid==15?this.flagsGames:this.ppGames).sort((a,b)=>(score(b)-score(a)));    
+        return (mmid == 15 ? this.flagsGames : this.ppGames).sort((a, b) => (score(b) - score(a)));
     }
-    bestWins(mmid){
-        return (mmid==15?this.flagsGames:this.ppGames).filter(g=>(g.players[userUid].won)).sort((a,b)=>(b.opponents[0].elo(mmid)-a.opponents[0].elo(mmid)));
+    bestWins(mmid) {
+        return (mmid == 15 ? this.flagsGames : this.ppGames).filter(g => (g.players[userUid].won)).sort((a, b) => (b.opponents[0].elo(mmid) - a.opponents[0].elo(mmid)));
     }
-    worstLosses(mmid){
-        return (mmid==15?this.flagsGames:this.ppGames).filter(g=>(!g.players[userUid].won)).sort((a,b)=>(a.opponents[0].elo(mmid)-b.opponents[0].elo(mmid)));
+    worstLosses(mmid) {
+        return (mmid == 15 ? this.flagsGames : this.ppGames).filter(g => (!g.players[userUid].won)).sort((a, b) => (a.opponents[0].elo(mmid) - b.opponents[0].elo(mmid)));
     }
-    bestOpponents(mmid){
-        function score(p,s){
-            return p.winRate(mmid)*(s.ppGames.length+s.flagsGames.length)+
-            p.games(mmid).length//tiebreaker
+    bestOpponents(mmid) {
+        function score(p, s) {
+            return p.winRate(mmid) * (s.ppGames.length + s.flagsGames.length) +
+                p.games(mmid).length //tiebreaker
         }
         return Object.values(PLAYER_CACHE).
-            filter(p=>!!p.games(mmid).length). // has any games played
-            sort((a,b)=>score(b,this)-score(a,this));
+        filter(p => !!p.games(mmid).length). // has any games played
+        sort((a, b) => score(b, this) - score(a, this));
     }
-    worstCountriesCorrect(mmid){
-        return Object.values(mmid==15?this.flagsCountryStats:this.ppCountryStats).filter(c=>!!c.guessedTotal).sort((a,b)=>a.correctRate-b.correctRate);
+    worstCountriesCorrect(mmid) {
+        return Object.values(mmid == 15 ? this.flagsCountryStats : this.ppCountryStats).filter(c => !!c.guessedTotal).sort((a, b) => a.correctRate - b.correctRate);
     }
-    worstCountriesScore(mmid){
-        return Object.values(mmid==15?this.flagsCountryStats:this.ppCountryStats).filter(c=>!!c.guessedTotal).sort((a,b)=>a.averageScore-b.averageScore);
+    worstCountriesScore(mmid) {
+        return Object.values(mmid == 15 ? this.flagsCountryStats : this.ppCountryStats).filter(c => !!c.guessedTotal).sort((a, b) => a.averageScore - b.averageScore);
     }
-    worstCountriesTime(mmid){
-        return Object.values(mmid==15?this.flagsCountryStats:this.ppCountryStats).filter(c=>!!c.guessedTotal).sort((a,b)=>b.averageTime-a.averageTime);
+    worstCountriesTime(mmid) {
+        return Object.values(mmid == 15 ? this.flagsCountryStats : this.ppCountryStats).filter(c => !!c.guessedTotal).sort((a, b) => b.averageTime - a.averageTime);
     }
 
-    worstOpponents(mmid){
-        function score(p,s){
-            return p.winRate(mmid)*(s.ppGames.length+s.flagsGames.length)-
-            p.games(mmid).length//tiebreaker (reverse because we want SMALLER scores first)
+    worstOpponents(mmid) {
+        function score(p, s) {
+            return p.winRate(mmid) * (s.ppGames.length + s.flagsGames.length) -
+                p.games(mmid).length //tiebreaker (reverse because we want SMALLER scores first)
         }
         return Object.values(PLAYER_CACHE).
-            filter(p=>!!p.games(mmid).length). // has any games played
-            sort((a,b)=>score(a,this)-score(b,this));
+        filter(p => !!p.games(mmid).length). // has any games played
+        sort((a, b) => score(a, this) - score(b, this));
     }
-    bestGuesses(mmid){
-        function score(g){
-            return g.score*1000000-g.distance*(10000*(mmid!=15))-g.time;
+    bestGuesses(mmid) {
+        function score(g) {
+            return g.score * 1000000 - g.distance * (10000 * (mmid != 15)) - g.time;
         }
-        const games = (mmid==15?this.flagsGames:this.ppGames);
-        return games.map(g=>Object.values(g.players[userUid].results)).flat().filter(r=>!!r.pick.iso2).sort((a,b)=>(score(b)-score(a)));
+        const games = (mmid == 15 ? this.flagsGames : this.ppGames);
+        return games.map(g => Object.values(g.players[userUid].results)).flat().filter(r => !!r.pick.iso2).sort((a, b) => (score(b) - score(a)));
     }
-    mostPlayedOpponents(mmid){
-        return Object.values(PLAYER_CACHE).filter(p=>!!p.games(mmid).length).sort((a,b)=>b.games(mmid).length-a.games(mmid).length);
+    mostPlayedOpponents(mmid) {
+        return Object.values(PLAYER_CACHE).filter(p => !!p.games(mmid).length).sort((a, b) => b.games(mmid).length - a.games(mmid).length);
     }
     async processGame(game) {
         let gameObj = await Game.fromLobbyId(game.lobbyId);
@@ -380,13 +389,12 @@ class Stats {
                 this.flagsWon++;
             }
             countryStats = this.flagsCountryStats;
-        }
-        else{
+        } else {
             return;
         }
-        for (const result of Object.values(gameObj.players[userUid].results)){
-            if(!result.drop.iso2) continue;
-            if(result.drop.iso2 && !countryStats[result.drop.iso2]){
+        for (const result of Object.values(gameObj.players[userUid].results)) {
+            if (!result.drop.iso2) continue;
+            if (result.drop.iso2 && !countryStats[result.drop.iso2]) {
                 countryStats[result.drop.iso2] = new CountryStats(result.drop.iso2);
             }
             countryStats[result.drop.iso2].process(result);
@@ -396,10 +404,10 @@ class Stats {
         // this is called separately to make it possible to get user data asynchronously and without repeating any uids
         $("#loading-flavor").text("Fetching opponent data...");
         $("#loading-progress").val(0);
-        
+
         const getPlayerDataSingle = async (uid) => {
             USER_DATA_CACHE[uid] || (USER_DATA_CACHE[uid] = (await getPublicUserInfoByUid(uid)).response);
-            $("#loading-progress").val($("#loading-progress").val()+1);
+            $("#loading-progress").val($("#loading-progress").val() + 1);
         };
         const uidSet = new Set(this.ppGames.concat(this.flagsGames).map(game => Object.keys(game.players)).flat());
         $("#loading-progress").attr("max", uidSet.size);
@@ -411,55 +419,61 @@ class Stats {
         $("#pp-overview-elo").text(this.ppElo);
         $("#pp-overview-rank").html(this.ppRank.html);
         const b = this.bestGames(16);
-        for(const g of b.slice(0,3)){
+        for (const g of b.slice(0, 3)) {
             $("#pp-games-best-games").append(g.html);
         }
-        for(const g of b.slice(b.length-3).reverse()){
+        for (const g of b.slice(b.length - 3).reverse()) {
             $("#pp-games-worst-games").append(g.html);
         }
-        for(const g of this.bestWins(16).slice(0,3)){
+        for (const g of this.bestWins(16).slice(0, 3)) {
             $("#pp-games-best-wins").append(g.html);
         }
-        for(const g of this.worstLosses(16).slice(0,3)){
+        for (const g of this.worstLosses(16).slice(0, 3)) {
             $("#pp-games-worst-losses").append(g.html);
         }
-        for(const p of this.bestOpponents(16).slice(0,3)){
+        for (const p of this.bestOpponents(16).slice(0, 3)) {
             $("#pp-opponents-best").append(p.html(16));
         }
-        for(const p of this.worstOpponents(16).slice(0,3)){
+        for (const p of this.worstOpponents(16).slice(0, 3)) {
             $("#pp-opponents-worst").append(p.html(16));
         }
-        for(const p of this.mostPlayedOpponents(16).slice(0,3)){
+        for (const p of this.mostPlayedOpponents(16).slice(0, 3)) {
             $("#pp-opponents-most-played").append(p.html(16));
         }
         const bestPpGuesses = this.bestGuesses(16);
-        for (const g of bestPpGuesses.slice(0,3)){
+        for (const g of bestPpGuesses.slice(0, 3)) {
             let node = g.html;
             $("#pp-guesses-best").append(node);
             g.addMap($("#pp-guesses-best .guess").last());
             //setTimeout(()=>{g.addMap(node)}, 10);
         }
-        for (const g of bestPpGuesses.slice(bestPpGuesses.length-3).reverse()){
+        for (const g of bestPpGuesses.slice(bestPpGuesses.length - 3).reverse()) {
             let node = g.html;
             $("#pp-guesses-worst").append(node);
 
             g.addMap($("#pp-guesses-worst .guess").last());
             //setTimeout(()=>{g.addMap(node)}, 10);
         }
-        for (const c of this.worstCountriesCorrect(16)){
+        for (const c of this.worstCountriesCorrect(16)) {
             $("#pp-countries-correct").append(c.correctHtml);
         }
-        for (const c of this.worstCountriesScore(16)){
+        for (const c of this.worstCountriesScore(16)) {
             $("#pp-countries-score").append(c.scoreHtml);
         }
         const hg = $("#pp-dist-histogram")[0];
-        Plotly.newPlot('pp-dist-histogram', [{x:[...Array(24).keys().map(k=>k*250)], y:this.ppHistogram, type:"bar"}], {responsive: true});
+        Plotly.newPlot('pp-dist-histogram', [{
+            x: [...Array(24).keys().map(k => k * 250)],
+            y: this.ppHistogram,
+            type: "bar"
+        }], {
+            responsive: true
+        });
         const ro = new ResizeObserver(() => {
-          Plotly.Plots.resize(hg);
+            Plotly.Plots.resize(hg);
         });
 
         ro.observe(hg);
-        densityLayer=L.heatLayer(this.guessLocations, HEATMAP_OPTS).addTo(map);
+        densityLayer = L.heatLayer(this.guessLocations, HEATMAP_OPTS).addTo(map);
 
     }
     async showFlags() {
@@ -468,52 +482,58 @@ class Stats {
         $("#flags-overview-elo").text(this.flagsElo);
         $("#flags-overview-rank").html(this.flagsRank.html);
         const b = this.bestGames(15);
-        for(const g of b.slice(0,3)){
+        for (const g of b.slice(0, 3)) {
             $("#flags-games-best-games").append(g.html);
         }
-        for(const g of b.slice(b.length-3).reverse()){
+        for (const g of b.slice(b.length - 3).reverse()) {
             $("#flags-games-worst-games").append(g.html);
         }
-        for (const g of this.bestWins(15).slice(0,3)){
+        for (const g of this.bestWins(15).slice(0, 3)) {
             $("#flags-games-best-wins").append(g.html);
         }
-        for (const g of this.worstLosses(15).slice(0,3)){
+        for (const g of this.worstLosses(15).slice(0, 3)) {
             $("#flags-games-worst-losses").append(g.html);
         }
-        for(const p of this.bestOpponents(15).slice(0,3)){
+        for (const p of this.bestOpponents(15).slice(0, 3)) {
             $("#flags-opponents-best").append(p.html(15));
         }
-        for(const p of this.worstOpponents(15).slice(0,3)){
+        for (const p of this.worstOpponents(15).slice(0, 3)) {
             $("#flags-opponents-worst").append(p.html(15));
         }
-        for(const p of this.mostPlayedOpponents(15).slice(0,3)){
+        for (const p of this.mostPlayedOpponents(15).slice(0, 3)) {
             $("#flags-opponents-most-played").append(p.html(15));
         }
         const bestFlagsGuesses = this.bestGuesses(15);
-        for (const g of bestFlagsGuesses.slice(0,3)){
+        for (const g of bestFlagsGuesses.slice(0, 3)) {
             let node = g.html;
             $("#flags-guesses-best").append(node);
             g.addMap($("#flags-guesses-best .guess").last());
             //setTimeout(()=>{g.addMap(node)}, 10);
         }
-        for (const g of bestFlagsGuesses.slice(bestFlagsGuesses.length-3).reverse()){
+        for (const g of bestFlagsGuesses.slice(bestFlagsGuesses.length - 3).reverse()) {
             let node = g.html;
             $("#flags-guesses-worst").append(node);
 
             g.addMap($("#flags-guesses-worst .guess").last());
             //setTimeout(()=>{g.addMap(node)}, 10);
         }
-        for (const c of this.worstCountriesScore(15)){
+        for (const c of this.worstCountriesScore(15)) {
             $("#flags-countries-score").append(c.scoreHtml);
         }
-        for (const c of this.worstCountriesTime(15)){
+        for (const c of this.worstCountriesTime(15)) {
             $("#flags-countries-time").append(c.timeHtml);
         }
 
-         const hg = $("#flags-dist-histogram")[0];
-        Plotly.newPlot('flags-dist-histogram', [{x:[...Array(24).keys().map(k=>k*250)], y:this.flagsHistogram, type:"bar"}], {responsive: true});
+        const hg = $("#flags-dist-histogram")[0];
+        Plotly.newPlot('flags-dist-histogram', [{
+            x: [...Array(24).keys().map(k => k * 250)],
+            y: this.flagsHistogram,
+            type: "bar"
+        }], {
+            responsive: true
+        });
         const ro = new ResizeObserver(() => {
-          Plotly.Plots.resize(hg);
+            Plotly.Plots.resize(hg);
         });
 
         ro.observe(hg);
@@ -521,16 +541,16 @@ class Stats {
     async show() {
         await Promise.all([this.showPp(), this.showFlags()]);
     }
-    get ppHistogram(){
-        const hgram = this.ppGames.map(g=>g.players[userUid].hgram).reduce(sumHgrams, {});
-        return [...Array(24).keys().map(bucket=>hgram[bucket]||0)];
+    get ppHistogram() {
+        const hgram = this.ppGames.map(g => g.players[userUid].hgram).reduce(sumHgrams, {});
+        return [...Array(24).keys().map(bucket => hgram[bucket] || 0)];
     }
-    get flagsHistogram(){
-        const hgram = this.flagsGames.map(g=>g.players[userUid].hgram).reduce(sumHgrams, {});
-        return [...Array(24).keys().map(bucket=>hgram[bucket]||0)];
+    get flagsHistogram() {
+        const hgram = this.flagsGames.map(g => g.players[userUid].hgram).reduce(sumHgrams, {});
+        return [...Array(24).keys().map(bucket => hgram[bucket] || 0)];
     }
-    get guessLocations(){
-        return this.ppGames.map(g=>g.players[userUid].guessLocations).flat();
+    get guessLocations() {
+        return this.ppGames.map(g => g.players[userUid].guessLocations).flat();
     }
 };
 async function getAllMatchmakingGames(uid) {
@@ -554,11 +574,12 @@ async function processGames(games) {
     await stats.getPlayerData();
     return stats;
 }
-function *deduplicateLobbies(games){
+
+function* deduplicateLobbies(games) {
     var lobbyIds = new Set();
-    
-    for(const g of games){
-        if(!lobbyIds.has(g.lobbyId)){
+
+    for (const g of games) {
+        if (!lobbyIds.has(g.lobbyId)) {
             lobbyIds.add(g.lobbyId);
             yield g;
         }
@@ -579,5 +600,3 @@ getAllMatchmakingGames(userUid).then(async (g) => {
     $("#stats").tabs();
     $("#loading").hide();
 });
-
-

@@ -49,23 +49,46 @@ const apiRequest = (async (url, method, args) => {
 });
 
 
-const getGameHistoryDetails = async(lobbyId)=>{
-    return await apiRequest("/v1/matchmaking/getGameHistoryDetails.php", "GET", {"params":{"lobbyId":lobbyId}});
+const getGameHistoryDetails = async (lobbyId) => {
+    return await apiRequest("/v1/matchmaking/getGameHistoryDetails.php", "GET", {
+        "params": {
+            "lobbyId": lobbyId
+        }
+    });
 };
 
-const getPublicUserInfoByUid= async(uid)=>{
-    return await apiRequest("/v1/user/getPublicUserInfoByUid.php", "GET", {"params":{"uid":uid}});
+const getPublicUserInfoByUid = async (uid) => {
+    return await apiRequest("/v1/user/getPublicUserInfoByUid.php", "GET", {
+        "params": {
+            "uid": uid
+        }
+    });
 };
 
-const findUsersByNickname = async(nickname)=>{
-    return await apiRequest("/v1/user/getUserSuggestionsV2.php", "POST", {"data":{"term":nickname, "type":"nickname", "private":false
-    }, "enc":true});
+const findUsersByNickname = async (nickname) => {
+    return await apiRequest("/v1/user/getUserSuggestionsV2.php", "POST", {
+        "data": {
+            "term": nickname,
+            "type": "nickname",
+            "private": false
+        },
+        "enc": true
+    });
 };
 
-const getRankedMatchmakingGames = async(uid, offset)=>{
-    return await apiRequest("/v1/matchmaking/getRankedMatchmakingGames.php", "GET", {"params":{"uid":uid, "offset":offset}});
+const getRankedMatchmakingGames = async (uid, offset) => {
+    return await apiRequest("/v1/matchmaking/getRankedMatchmakingGames.php", "GET", {
+        "params": {
+            "uid": uid,
+            "offset": offset
+        }
+    });
 };
 
-const getCurrentUserStatistics = async(uid) =>{
-    return await apiRequest("/v1/season/getCurrentUserStatistics.php", "GET", {"params":{"uid":uid}});
+const getCurrentUserStatistics = async (uid) => {
+    return await apiRequest("/v1/season/getCurrentUserStatistics.php", "GET", {
+        "params": {
+            "uid": uid
+        }
+    });
 }

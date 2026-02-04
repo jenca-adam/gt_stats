@@ -1,29 +1,31 @@
 <!doctype html>
 <html>
-    <head>
-        <title>{%block title%}{%endblock%} - Geotastic Stats</title>
-        <script src="/static/js/jquery.min.js"></script>
 
-        <link rel="stylesheet" href="/static/css/style.css">
-        {%block head%}{%endblock%}
-    </head>
-    <body>
-        <div id="app">
+<head>
+    <title>{%block title%}{%endblock%} - Geotastic Stats</title>
+    <script src="/static/js/jquery.min.js"></script>
+
+    <link rel="stylesheet" href="/static/css/style.css">
+    {%block head%}{%endblock%}
+</head>
+
+<body>
+    <div id="app">
         <div id="banner">
             <a class="banner-item title" href="/">Geotastic Stats</a>
         </div>
         <div id="main">
-{%block content%}{%endblock%}
+            {%block content%}{%endblock%}
         </div>
         <div id="footer">
             Distributed under the open-source MIT license.
             <a href="https://github.com/jenca-adam/gt_stats">Github repo</a>
         </div>
         {%block extra%}{%endblock%}
-        </div>
+    </div>
     <script src='https://cdn.plot.ly/plotly-3.2.0.min.js'></script>
     <script src="//code.iconify.design/1/1.0.6/iconify.min.js"></script>
-{%block scripts%}{%endblock%}
-    </body>
+    {%block scripts%}{%endblock%}
+</body>
+
 </html>
-    

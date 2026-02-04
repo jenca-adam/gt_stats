@@ -1,5 +1,5 @@
 $.fn.tabs = function() {
-    const tabsEl=this;
+    const tabsEl = this;
     this.children(".tab").filter(function() {
         return !$(this).hasClass("active")
     }).hide();

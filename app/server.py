@@ -5,7 +5,8 @@ import requests
 import base64
 import threading
 import time
-with open("credentials.json","r") as f:
+
+with open("credentials.json", "r") as f:
     credentials = json.load(f)
 
 app = Flask(__name__, static_folder="static")
@@ -15,6 +16,16 @@ client_lock = threading.Lock()
 refresh_lock = threading.Lock()
 last_update = 0
 client = None
+
+ALLOWED_URLS = {
+    "v1/matchmaking/getGameHistoryDetails.php",
+    "v1/user/getPublicUserInfoByUid.php",
+    "v1/user/getUserSuggestionsV2.php",
+    "v1/matchmaking/getRankedMatchmakingGames.php",
+    "v1/season/getCurrentUserStatistics.php",
+}
+
+
 def get_client(force_refresh=False):
     """
     Returns a logged-in client, refreshing the token only when required.
@@ -23,31 +34,39 @@ def get_client(force_refresh=False):
     global client, last_update
     with client_lock:
         print("NEXT", last_update)
-        if client is None or (force_refresh and last_update<time.time()-1):
+        if client is None or (force_refresh and last_update < time.time() - 1):
             print("need update")
             try:
-                client = gt_api.Client.login(credentials['username'], credentials['password'])
+                client = gt_api.Client.login(
+                    credentials["username"], credentials["password"]
+                )
                 last_update = time.time()
             except Exception as e:
                 raise RuntimeError(f"Login failed: {e}")
 
         return client
 
+
 client = get_client()
+
 
 def safe_api_call(full_url, method, params, kwargs):
     global client
 
     try:
-        return gt_api.generic.process_response(gt_api.generic.geotastic_api_request(full_url, method, client.auth_token, params=params, **kwargs))
+        return gt_api.generic.process_response(
+            gt_api.generic.geotastic_api_request(
+                full_url, method, client.auth_token, params=params, **kwargs
+            )
+        )
     except gt_api.errors.GeotasticAPIError as e:
         print(e)
         if "invalid token" in str(e).lower():
-            print("refreshing", getattr(client,'auth_token', None))
+            print("refreshing", getattr(client, "auth_token", None))
             client = get_client(force_refresh=True)
             print("new", client.auth_token)
             return safe_api_call(full_url, method, params, kwargs)
-        
+
         raise
 
 
@@ -58,6 +77,13 @@ def index():
 
 @app.route("/proxy/gt/<path:url>", methods=["GET", "POST"])
 def gt_proxy(url):
+    print(url)
+    if url not in ALLOWED_URLS:
+        return {
+            "status": "error",
+            "message": "Endpoint not allowed",
+            "response": None,
+        }, 403
     client = get_client()
     server = request.args.get("server", "api")
     enc = request.args.get("enc") == "true"
@@ -78,12 +104,14 @@ def gt_proxy(url):
         kwargs["json"] = data
 
     try:
-        response = safe_api_call(
-                full_url, request.method, params, kwargs
-        )
+        response = safe_api_call(full_url, request.method, params, kwargs)
 
     except requests.exceptions.ConnectionError:
-        return {"status": "error", "message": "failed to connect", "response": ""}, 503
+        return {
+            "status": "error",
+            "message": "failed to connect",
+            "response": None,
+        }, 503
     except gt_api.errors.GeotasticAPIError as e:
         return {"status": "error", "message": str(e), "response": None}, 400
 
@@ -95,7 +123,12 @@ def stats(uid):
     client = get_client()
 
     try:
-        user_data = safe_api_call("https://backend01.geotastic.net/v1/user/getPublicUserInfoByUid.php", "GET", {"uid":uid}, {})
+        user_data = safe_api_call(
+            "https://backend01.geotastic.net/v1/user/getPublicUserInfoByUid.php",
+            "GET",
+            {"uid": uid},
+            {},
+        )
     except gt_api.errors.GeotasticAPIError:
         abort(400)
     except Exception:
@@ -104,5 +137,5 @@ def stats(uid):
     return render_template("stats.html", uid=uid, public_user_data=user_data)
 
 
-if __name__=="__main__":app.run(port=5000)
-
+if __name__ == "__main__":
+    app.run(port=5000)

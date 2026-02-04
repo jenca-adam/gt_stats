@@ -285,31 +285,31 @@
                 </div>
             </div>
 
-        <div class="card col-5" id="flags-games">
-            <div class="card-header">
-                <h3 class="card-title">Games</h3>
-            </div>
+            <div class="card col-5" id="flags-games">
+                <div class="card-header">
+                    <h3 class="card-title">Games</h3>
+                </div>
 
-            <div class="card-body">
-                <div class="stat column">
-                    <span class="stat-name">Best games (score)</span>
-                    <div class="stat-value-multi column" id="flags-games-best-games"></div>
-                </div>
-                <div class="stat column">
-                    <span class="stat-name">Worst games (score)</span>
-                    <div class="stat-value-multi column" id="flags-games-worst-games"></div>
-                </div>
-                <div class="stat column">
-                    <span class="stat-name">Best wins (opponent elo)</span>
-                    <div class="stat-value-multi column" id="flags-games-best-wins"></div>
-                </div>
-                <div class="stat column">
-                    <span class="stat-name">Worst losses (opponent elo)</span>
-                    <div class="stat-value-multi column" id="flags-games-worst-losses"></div>
+                <div class="card-body">
+                    <div class="stat column">
+                        <span class="stat-name">Best games (score)</span>
+                        <div class="stat-value-multi column" id="flags-games-best-games"></div>
+                    </div>
+                    <div class="stat column">
+                        <span class="stat-name">Worst games (score)</span>
+                        <div class="stat-value-multi column" id="flags-games-worst-games"></div>
+                    </div>
+                    <div class="stat column">
+                        <span class="stat-name">Best wins (opponent elo)</span>
+                        <div class="stat-value-multi column" id="flags-games-best-wins"></div>
+                    </div>
+                    <div class="stat column">
+                        <span class="stat-name">Worst losses (opponent elo)</span>
+                        <div class="stat-value-multi column" id="flags-games-worst-losses"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="card col-7" id="flags-guesses">
+            <div class="card col-7" id="flags-guesses">
                 <div class="card-header">
                     <h3 class="card-title">Guesses</h3>
                 </div>
@@ -327,7 +327,7 @@
             </div>
 
 
-        <div class="card col-6" id="flags-dist">
+            <div class="card col-6" id="flags-dist">
                 <div class="card-header">
                     <h3 class="card-title">Score Distribution</h3>
                 </div>
@@ -336,7 +336,7 @@
                     </div>
                 </div>
             </div>
-    <div class="card col-6" id="flags-countries">
+            <div class="card col-6" id="flags-countries">
                 <div class="card-header">
                     <h3 class="card-title">Countries</h3>
                 </div>
@@ -344,7 +344,7 @@
                 <div class="tabs">
                     <div class="tablist">
                         <button class="tab-button active" data-tab="tab-score">Score</button>
-                    
+
                         <button class="tab-button" data-tab="tab-time">Time</button>
                     </div>
                     <div class="tab active country-table-wrapper" data-tab="tab-score">
@@ -376,8 +376,8 @@
                     </div>
                 </div>
             </div>
-</div>
-</div>
+        </div>
+    </div>
 </div>
 <div id="loading">
     <img class="loading-image" src="/static/loading.webp" width="100">
@@ -387,23 +387,27 @@
 {%block extra%}
 <div id="modal-container" style="display:none; position:absolute;">
     <div id="modal-wrapper" style="background:rgba(0,0,0,0.5); position:absolute; z-index:99; width:100vw; height:100vh; display:flex; justify-content:center; align-items:center">
-    <div id="modal" class="card" style="width:50vw;">
-        <div class="card-header">
-            <h3 class="card-title" id="modal-title"></h3>
-        </div>
-        <div id="modal-body" style="padding:1em;">
-        </div>
-        <div id="modal-foot" style="display:flex; flex-direction:row; justify-content:center; align-items:center; padding:1em;">
-            <button id="modal-close" class="button">Close</button>
+        <div id="modal" class="card" style="width:50vw;">
+            <div class="card-header">
+                <h3 class="card-title" id="modal-title"></h3>
+            </div>
+            <div id="modal-body" style="padding:1em;">
+            </div>
+            <div id="modal-foot" style="display:flex; flex-direction:row; justify-content:center; align-items:center; padding:1em;">
+                <button id="modal-close" class="button">Close</button>
+            </div>
         </div>
     </div>
-</div>
 </div>
 {%endblock%}
 {%block scripts%}
 <script>
     const userUid = "{{uid}}";
-    const userData = {{public_user_data | tojson}};
+    const userData = {
+        {
+            public_user_data | tojson
+        }
+    };
 </script>
 <script src="/static/js/countries.js"></script>
 <script src="/static/js/proxy.js"></script>

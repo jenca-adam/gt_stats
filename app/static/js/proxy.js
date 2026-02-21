@@ -14,7 +14,7 @@ const apiRequest = (async (url, method, args) => {
 
     const encodedParams = btoa(JSON.stringify(args.params));
     const urlParamsDict = {
-        server: args.server || "backend01",
+        server: args.server || "backend03",
         enc: Boolean(args.enc),
     };
     if (args.token) urlParamsDict["token"] = args.token;

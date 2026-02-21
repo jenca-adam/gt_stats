@@ -85,7 +85,7 @@ def gt_proxy(url):
             "response": None,
         }, 403
     client = get_client()
-    server = request.args.get("server", "api")
+    server = request.args.get("server", "backend03")
     enc = request.args.get("enc") == "true"
 
     if "params" in request.args:
@@ -124,7 +124,7 @@ def stats(uid):
 
     try:
         user_data = safe_api_call(
-            "https://backend01.geotastic.net/v1/user/getPublicUserInfoByUid.php",
+            "https://backend03.geotastic.net/v1/user/getPublicUserInfoByUid.php",
             "GET",
             {"uid": uid},
             {},
